@@ -1,0 +1,25 @@
+{
+  "name": "textima",
+  "version": "1.0.0",
+  "description": "Text Image&Mask generator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dzubape/textima.git"
+  },
+  "keywords": [
+    "svg",
+    "text",
+    "mask",
+    "ml"
+  ],
+  "author": "Petro Dz.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dzubape/textima/issues"
+  },
+  "homepage": "https://github.com/dzubape/textima#readme"
+}
