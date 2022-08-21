@@ -1,5 +1,7 @@
 import { SVG, Rect } from "./node_modules/@svgdotjs/svg.js/dist/svg.esm.js"
-import d2i from './node_modules/dom-to-image/dist/dom-to-image.min.js';
+import './node_modules/dom-to-image/src/dom-to-image.js';
+
+let d2i = domtoimage;
 
 let img_size = {w: 300, h: 400}
 
@@ -106,8 +108,14 @@ img.onload = function() {
 
 }();
 
-domtoimage.toPng(node)
-    .then(function (dataUrl) {
+d2i.toPng(document.getElementById('text-sample'))
+.then(function(blob) {
+    console.log(blob);
+});
+
+d2i.toPng(document.getElementById('text-sample'))
+    .then(function(dataUrl) {
+        // console.log(dataUrl);
         var img = new Image();
         img.src = dataUrl;
         document.body.appendChild(img);
