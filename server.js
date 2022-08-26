@@ -1,5 +1,6 @@
 const fs = require('fs');
 const http = require('http');
+const url = require('url');
 const path = require('path');
 
 const send404 = function(resp) {
@@ -30,7 +31,9 @@ const sendFile = function(resp, filePath) {
 
 const server = http.createServer(function(req, resp) {
 
-    var filePath = path.join(__dirname, req.url);
+    var req_url = url.parse(req.url, true);
+
+    var filePath = path.join(__dirname, req_url.pathname);
 
     fs.stat(filePath, (err, stats) => {
 
@@ -39,6 +42,8 @@ const server = http.createServer(function(req, resp) {
             send404(resp);
             return;
         }
+
+        console.log(url.parse(req.url,true).query);
 
         sendFile(resp, filePath);
     });
