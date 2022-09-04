@@ -30,9 +30,9 @@ for(let c of text) {
     tablet.appendChild(cspan);
 }
 
-// toCanvas(document.getElementById('text-sample'))
-toCanvas(document.body)
-.then(function (canvas) {
+toCanvas(document.getElementById('tablet'))
+// toCanvas(document.body)
+.then(function(canvas) {
 
     document.body.appendChild(canvas);
 });

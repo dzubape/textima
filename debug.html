@@ -6,25 +6,36 @@
             @font-face {
                 font-family: "Textima";
                 src: url(/fonts/AlumniSansPinstripe-Regular.ttf) format('truetype');
-                src: url(/fonts/Aboreto-Regular.woff2);
+                src: url(/fonts/FreeMono.ttf) format('truetype');
+                /* src: url(/fonts/Aboreto-Regular.woff2); */
             }
             body {
                 padding: 0;
-                margin: 50px;
+                margin: 0px;
                 font-family: Textima;
                 font-size: 60px;
+            }
+
+            #tablet {
+
+                padding: 10px;
             }
 
             #tablet span {
 
                 font-size: 40px;
             }
+
+            h2 {
+
+                font-size: 20px;
+            }
         </style>
         <script type="module" src="printer.js"></script>
     </head>
     <body>
-        <div id="text-sample"><ul><li>Hello</li><li>White</li><li>Man</li></ul></div>
-
+        <h2>SVG:</h2>
         <div id="tablet"></div>
+        <h2>Canvas:</h2>
     </body>
 </html>
