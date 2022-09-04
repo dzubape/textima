@@ -16,14 +16,19 @@ let toCanvas = htmlToImage.toCanvas;
 let text = "Hello, babe! Какой чудесный день!";
 
 let tablet = document.getElementById('tablet');
-tablet.style.transform = 'rotateY(5deg)';
+// tablet.style.transform = 'rotateY(5deg)';
 // tablet.style.background = `rgb(${ranCol()}, ${ranCol()}, ${ranCol()})`;
+let plateAngle = randomFromRange(-45, 45);
+console.log(plateAngle)
+tablet.style.transform = `perspective(500px) rotateY(${plateAngle}deg) rotateX(${randomFromRange(-15, 15)}deg) rotateZ(${randomFromRange(-15, 15)}deg)`;
+tablet.style.transformOrigin = plateAngle > 0 ? 'left' : 'right';
+tablet.style.transformOrigin = 'center';
 
 for(let c of text) {
 
     let cspan = document.createElement('span');
     cspan.innerText = c;
-    cspan.style.color = `rgb(${ranCol()}, ${ranCol()}, ${ranCol()})`;
+    cspan.style.color = `rgba(${ranCol()}, ${ranCol()}, ${ranCol()}, ${randomFromRange(130, 230)/255})`;
     cspan.style.transform = `rotateZ(${ranRot()}deg) translateX(${ranShift()}px) translateY(${ranShift()}px)`;
     cspan.style.fontSize = `${ranFontSize()}px`;
     cspan.style.display = 'inline-block';
