@@ -24,6 +24,7 @@
   "homepage": "https://github.com/dzubape/textima#readme",
   "dependencies": {
     "@svgdotjs/svg.js": "^3.1.2",
-    "dom-to-image": "^2.6.0"
+    "dom-to-image": "^2.6.0",
+    "html-to-image": "^1.10.8"
   }
 }

@@ -1,5 +1,5 @@
 import { SVG } from "./node_modules/@svgdotjs/svg.js/dist/svg.esm.js"
-import {b64EncodeUnicode, b64DecodeUnicode} from './base644utf8.js';
+import {arrayBufferToBase64} from './base644utf8.js';
 
 let parse_function_decoration = function(f) {
 
@@ -22,19 +22,18 @@ let q = 1;
 var svg = SVG()
 .addTo(tablet)
 .size(img_size.w, img_size.h)
-// .move(-200, -200)
 .scale(q, q)
 
 var style;
 
 fetch('/fonts/Aboreto-Regular.woff2')
+// fetch('/fonts/AlumniSansPinstripe-Italic.ttf')
 .then((resp)=>{
 
     resp.arrayBuffer()
     .then((data) => {
 
-        let arrayBuffer2base64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
-        data = arrayBuffer2base64(data);
+        data = arrayBufferToBase64(data);
         svg.style('@font-face {font-family: Textima; src: url(data:application/font-woff;charset=utf-8;base64,' + data + ');}');
 
         let rectCoords = [[0, 0], [0, 1], [1, 1], [1, 0]];
@@ -65,6 +64,10 @@ fetch('/fonts/Aboreto-Regular.woff2')
 
         plate
         .move(0, plate.bbox().height)
+        .transform({
+            origin: [0, 0],
+            skewX: -10,
+        })
 
         svg2canvas();
     });
@@ -87,11 +90,16 @@ function svg2canvas() {
     image.src = imgsrc;
     image.onload = function() {
 
+        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingQuality = "low"
+        // ctx.filter = 'blur(4px) invert(60%)';
         ctx.drawImage(image, 0, 0);
-        ctx.moveTo(60, 60);
+        // ctx.filter = 'blur(0)';
         ctx.fillStyle = 'rgb(0, 255, 100)';
-        ctx.font = '60px Roboto';
-        // ctx.fillText("Hello, Chepishillo!", 10, 60);
+        ctx.font = '20px Roboto';
+        ctx.moveTo(60.5, 60.5);
+        // ctx.moveTo(60, 60);
+        ctx.fillText("Hello, Chepushillo!", 10.0, 60.0);
 
         var canvasdata = canvas.toDataURL("image/png");
 

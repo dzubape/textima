@@ -15,4 +15,9 @@ function b64DecodeUnicode(str) {
     }).join(''));
 }
 
-export {b64EncodeUnicode, b64DecodeUnicode};
+function arrayBufferToBase64(buffer) {
+
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+export {b64EncodeUnicode, b64DecodeUnicode, arrayBufferToBase64};

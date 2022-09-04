@@ -39,11 +39,23 @@ const server = http.createServer(function(req, resp) {
 
         if(err || stats.isDirectory()) {
 
-            send404(resp);
+            filePath += '.js';
+
+            fs.stat(filePath, (err, stats) => {
+
+                if(err || stats.isDirectory()) {
+
+                    send404(resp);
+                    return;
+                }
+
+                sendFile(resp, filePath);
+            });
+
             return;
         }
 
-        console.log(url.parse(req.url,true).query);
+        // console.log(url.parse(req.url,true).query);
 
         sendFile(resp, filePath);
     });
