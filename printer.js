@@ -5,6 +5,7 @@ import * as htmlToImage from './node_modules/html-to-image/es/index';
 
 // var htmlToImage = await import('./node_modules/html-to-image/dist/html-to-image.js');
 
+
 const style = document.createElement('style');
 style.innerHTML = `
 @font-face {
@@ -23,7 +24,6 @@ body {
 #tablet {
 
     padding: 200px 300px;
-    /* position: absolute; */
     display: inline-block;
 }
 
@@ -38,6 +38,10 @@ h2 {
 }
 `;
 document.head.appendChild(style);
+
+setTimeout(() => {
+
+
 
 let randomFromRange = (lower, upper) => Math.floor(Math.random() * (upper - lower)) + lower;
 let ranCol = () => randomFromRange(0, 255);
@@ -76,3 +80,5 @@ toCanvas(document.getElementById('tablet'))
 
     document.body.appendChild(canvas);
 });
+
+}, 100);
