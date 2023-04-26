@@ -5,6 +5,40 @@ import * as htmlToImage from './node_modules/html-to-image/es/index';
 
 // var htmlToImage = await import('./node_modules/html-to-image/dist/html-to-image.js');
 
+const style = document.createElement('style');
+style.innerHTML = `
+@font-face {
+    font-family: "Textima";
+    src: url(/fonts/AlumniSansPinstripe-Regular.ttf) format('truetype');
+    src: url(/fonts/FreeMono.ttf) format('truetype');
+    src: url(/fonts/UbuntuMono-B.ttf) format('truetype');
+}
+body {
+    padding: 0;
+    margin: 0px;
+    font-family: Textima;
+    font-size: 60px;
+}
+
+#tablet {
+
+    padding: 200px 300px;
+    /* position: absolute; */
+    display: inline-block;
+}
+
+#tablet span {
+
+    font-size: 40px;
+}
+
+h2 {
+
+    font-size: 20px;
+}
+`;
+document.head.appendChild(style);
+
 let randomFromRange = (lower, upper) => Math.floor(Math.random() * (upper - lower)) + lower;
 let ranCol = () => randomFromRange(0, 255);
 let ranRot = () => randomFromRange(-15, 15);
@@ -14,6 +48,7 @@ let ranFontSize = () => randomFromRange(45, 50);
 let toCanvas = htmlToImage.toCanvas;
 
 let text = "Hello, babe! Какой чудесный день!";
+
 
 let tablet = document.getElementById('tablet');
 // tablet.style.transform = 'rotateY(5deg)';
