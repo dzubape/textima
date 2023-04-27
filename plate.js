@@ -37,8 +37,6 @@ h2 {
 `;
 document.head.appendChild(style);
 
-setTimeout(() => {
-
 
 let randomFromRange = (lower, upper) => Math.floor(Math.random() * (upper - lower)) + lower;
 let ranCol = () => randomFromRange(0, 255);
@@ -86,22 +84,46 @@ tablet.style.transform = `perspective(500px) rotateY(${plateAngle}deg) rotateX($
 tablet.style.transformOrigin = plateAngle > 0 ? 'left' : 'right';
 tablet.style.transformOrigin = 'center';
 
+let symbols = {};
+
 for(let c of text) {
 
     let cspan = document.createElement('span');
+    cspan.setAttribute('symbol',  c);
     cspan.innerText = c;
     cspan.style.color = `rgba(${ranCol()}, ${ranCol()}, ${ranCol()}, ${randomFromRange(130, 230)/255})`;
     cspan.style.transform = `rotateZ(${ranRot()}deg) translateX(${ranShift()}px) translateY(${ranShift()}px)`;
     cspan.style.fontSize = `${ranFontSize()}px`;
     cspan.style.display = 'inline-block';
     tablet.appendChild(cspan);
-}
 
+    symbols[c] = true;
+}
+symbols = Object.keys(symbols);
+
+let hideStyle = '.show-only span {visibility: hidden;}';
+for(let c of symbols) {
+
+    hideStyle += `.show-only[show-symbol="${c}"] span[symbol="${c}"] {visibility: visible; color: black !important;}`
+}
+style.innerHTML += hideStyle;
+
+setTimeout(() => {
 toCanvas(document.getElementById('tablet'))
 // toCanvas(document.body)
 .then(function(canvas) {
 
     document.body.appendChild(canvas);
+
+    tablet.classList.add('show-only');
+    let i=0;
+    let interv = setInterval(() => {
+
+        if(i >= symbols.length)
+            tablet.classList.remove('show-only');
+        else
+            tablet.setAttribute('show-symbol', symbols[i++])
+    }, 800)
 });
 
 }, 100); // setTimeout
