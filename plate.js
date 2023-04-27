@@ -1,4 +1,4 @@
-import * as htmlToImage from './node_modules/html-to-image/es/index';
+import * as html2image from './node_modules/html-to-image/es/index';
 
 // import { toCanvas, toPng, toJpeg, toBlob, toPixelData, toSvg } from './node_modules/html-to-image/dist/html-to-image.js ';
 //import './node_modules/html-to-image/dist/html-to-image.js';
@@ -7,6 +7,7 @@ import * as htmlToImage from './node_modules/html-to-image/es/index';
 
 
 const style = document.createElement('style');
+style.setAttribute('async', '');
 style.innerHTML = `
 @font-face {
     font-family: "Textima";
@@ -43,8 +44,6 @@ let ranCol = () => randomFromRange(0, 255);
 let ranRot = () => randomFromRange(-15, 15);
 let ranShift = () => randomFromRange(-8, 8);
 let ranFontSize = () => randomFromRange(45, 50);
-
-let toCanvas = htmlToImage.toCanvas;
 
 let text = "Hello, babe! Какой чудесный день!";
 const getRandomPlateNumber = () => {
@@ -109,21 +108,52 @@ for(let c of symbols) {
 style.innerHTML += hideStyle;
 
 setTimeout(() => {
-toCanvas(document.getElementById('tablet'))
-// toCanvas(document.body)
-.then(function(canvas) {
 
-    document.body.appendChild(canvas);
+let maskCanvas = document.createElement('canvas');
+
+html2image.toCanvas(document.getElementById('tablet'))
+.then((colorCanvas) => {
+
+    document.body.appendChild(colorCanvas);
+
+    maskCanvas.width = colorCanvas.width;
+    maskCanvas.height = colorCanvas.height * symbols.length;
+    document.body.appendChild(maskCanvas);
+
+    colorCanvas.style.border = 'solid 1px red';
+    colorCanvas.style.display = 'block';
+    maskCanvas.style.border = 'solid 1px red';
+    maskCanvas.style.display = 'block';
 
     tablet.classList.add('show-only');
     let i=0;
     let interv = setInterval(() => {
 
-        if(i >= symbols.length)
+        if(i >= symbols.length) {
+
             tablet.classList.remove('show-only');
-        else
-            tablet.setAttribute('show-symbol', symbols[i++])
-    }, 800)
+        }
+        else {
+
+            tablet.setAttribute('show-symbol', symbols[i]);
+
+            html2image.toCanvas(document.getElementById('tablet'))
+            .then((symbolMask) => {
+
+                document.body.appendChild(symbolMask);
+                symbolMask.style.display = 'block';
+                symbolMask.style.border = 'solid 1px red';
+
+                let maskImage = symbolMask.getContext('2d').getImageData(0, 0, symbolMask.width, symbolMask.height);
+                console.log(maskImage);
+                let y = i*symbolMask.height;
+                console.log(`y: ${y}`)
+                maskCanvas.getContext('2d').putImageData(maskImage, 0, y)
+            })
+
+            ++i;
+        }
+    }, 100)
 });
 
 }, 100); // setTimeout
