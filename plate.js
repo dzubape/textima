@@ -21,7 +21,7 @@ body {
 
 #tablet {
 
-    padding: 200px 300px;
+    padding: 30px 30px;
     display: inline-block;
 }
 
