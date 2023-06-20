@@ -4,7 +4,8 @@
   "description": "Text Image&Mask generator",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "back-dev": "nodemon server.js 2>&1 nodemon.log"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,13 @@
   "dependencies": {
     "@svgdotjs/svg.js": "^3.1.2",
     "dom-to-image": "^2.6.0",
-    "html-to-image": "^1.10.8"
+    "h5wasm": "^0.5.2",
+    "html-to-image": "^1.10.8",
+    "numjs": "^0.16.1",
+    "parcel": "^2.9.2",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }

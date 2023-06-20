@@ -5,6 +5,22 @@ import * as html2image from './node_modules/html-to-image/es/index';
 
 // var htmlToImage = await import('./node_modules/html-to-image/dist/html-to-image.js');
 
+function dataURLtoBlob(dataURL) {
+
+    let array, binary, i, len;
+    binary = atob(dataURL.split(',')[1]);
+    array = [];
+    i = 0;
+    len = binary.length;
+    while (i < len) {
+      array.push(binary.charCodeAt(i));
+      i++;
+    }
+    return new Blob([new Uint8Array(array)], {
+      type: 'image/png'
+    });
+  };
+
 
 const style = document.createElement('style');
 style.setAttribute('async', '');
@@ -20,13 +36,29 @@ body {
     font-size: 60px;
 }
 
+#tablet-box {
+
+    display: inline-grid;
+    background: #fff;
+}
+
+.tablet,
 #tablet {
 
     padding: 30px 30px;
     display: inline-block;
 }
 
-#tablet span {
+.tablet-wrapper {
+
+    display: inline-block;
+    box-sizing: content-box;
+    width: 256px;
+    height: 128px;
+    background: white;
+}
+
+.tablet span {
 
     font-size: 40px;
 }
@@ -74,11 +106,12 @@ const getRandomPlateNumber = () => {
 text = getRandomPlateNumber();
 
 
-let tablet = document.getElementById('tablet');
+let tabletWrapper = document.getElementById('tablet-wrapper');
 // tablet.style.transform = 'rotateY(5deg)';
 // tablet.style.background = `rgb(${ranCol()}, ${ranCol()}, ${ranCol()})`;
 let plateAngle = randomFromRange(-45, 45);
 console.log(plateAngle)
+let tablet = tabletWrapper.getElementsByClassName('tablet')[0];
 tablet.style.transform = `perspective(500px) rotateY(${plateAngle}deg) rotateX(${randomFromRange(-15, 15)}deg) rotateZ(${randomFromRange(-15, 15)}deg)`;
 tablet.style.transformOrigin = plateAngle > 0 ? 'left' : 'right';
 tablet.style.transformOrigin = 'center';
@@ -98,7 +131,7 @@ for(let c of text) {
 
     symbols[c] = true;
 }
-symbols = Object.keys(symbols);
+symbols = Object.keys(symbols).sort();
 
 let hideStyle = '.show-only span {visibility: hidden;}';
 for(let c of symbols) {
@@ -107,6 +140,107 @@ for(let c of symbols) {
 }
 style.innerHTML += hideStyle;
 
+//############### <
+
+for(let i=0; i<symbols.length; ++i) {
+
+    let layer = tabletWrapper.cloneNode(true);
+    layer.removeAttribute('id');
+    // layer.classList.add('tablet')
+    layer.classList.add('show-only');
+    layer.setAttribute('show-symbol', symbols[i]);
+    tabletWrapper.parentNode.appendChild(layer);
+}
+
+// Send image as PNG
+if(false)
+setTimeout(() => {
+
+    html2image.toCanvas(tablet.parentNode)
+    .then((fullCanvas) => {
+
+        document.body.appendChild(fullCanvas);
+        fullCanvas.style.display = 'block';
+        fullCanvas.style.border = 'solid 1px red';
+
+        let img_data = fullCanvas.toDataURL('image/png');
+        console.log(img_data);
+        let img_blob = dataURLtoBlob(img_data);
+        fetch(`/save-image?number=${text}&symbols=${symbols.join('')}`, {
+            method: 'POST',
+            body: img_blob,
+            dataType: 'image/png',
+        })
+        .then(() => {
+
+            location.pathname = location.pathname;
+        })
+    });
+}, 100);
+
+const parseUrl = function(url) {
+
+    if(!arguments.length)
+        url = location.toString();
+    
+    var [path, search] = url.split('?');
+    var [search, anchor] = search ? search.split('#') : [];
+    // let paramRex = /(\/([^/]+))/gi;
+    let params = {};
+    if(search) {
+
+        search.split('&').forEach((elem) => {
+
+            let [key, value] = elem.split('=');
+            params[key] = value || undefined;
+        })
+    }
+    return {path, params, anchor};
+};
+
+// Send image as pixel data
+if(true)
+setTimeout(() => {
+
+    html2image.toCanvas(tabletWrapper.parentNode)
+    .then((fullCanvas) => {
+
+        document.body.appendChild(fullCanvas);
+        fullCanvas.style.display = 'block';
+        fullCanvas.style.border = 'solid 1px red';
+
+        let ctx = fullCanvas.getContext('2d');
+        // ctx.globalAlpha = 0;
+
+        let img_data = ctx.getImageData(0, 0, fullCanvas.width, fullCanvas.height);
+        console.log('img_data:', img_data);
+        const location = parseUrl();
+        fetch(`/save-imagedata-to-h5?ds=${location.params["ds"] || ""}&number=${text}&symbols=${symbols.join('')}`, {
+            method: 'POST',
+            body: img_data.data,
+            // dataType: 'image/png',
+        })
+        .then((resp) => {
+
+            console.log('resp:', resp);
+
+            const loc = parseUrl(window.location.toString());
+            if('finished' == resp) {
+                alert('Finished!');
+            }
+            else {
+                loc.params['idx'] = parseInt(resp);
+                window.location.search = `?${loc.params.entries().map(([key, value]) => `${key}=${value}`).join('&')}`
+            }
+
+            // location.pathname = location.pathname;
+            // alert('Succeeded!')
+        })
+    });
+}, 100);
+
+if(0)
+//############### />
 setTimeout(() => {
 
 let maskCanvas = document.createElement('canvas');
@@ -136,6 +270,7 @@ html2image.toCanvas(document.getElementById('tablet'))
         else {
 
             tablet.setAttribute('show-symbol', symbols[i]);
+            const j = i;
 
             html2image.toCanvas(document.getElementById('tablet'))
             .then((symbolMask) => {
@@ -146,7 +281,7 @@ html2image.toCanvas(document.getElementById('tablet'))
 
                 let maskImage = symbolMask.getContext('2d').getImageData(0, 0, symbolMask.width, symbolMask.height);
                 console.log(maskImage);
-                let y = i*symbolMask.height;
+                let y = j*symbolMask.height;
                 console.log(`y: ${y}`)
                 maskCanvas.getContext('2d').putImageData(maskImage, 0, y)
             })
