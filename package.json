@@ -29,6 +29,7 @@
     "dom-to-image": "^2.6.0",
     "h5wasm": "^0.5.2",
     "html-to-image": "^1.10.8",
+    "http-proxy": "^1.18.1",
     "numjs": "^0.16.1",
     "parcel": "^2.9.2",
     "pngjs": "^7.0.0"

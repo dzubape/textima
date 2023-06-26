@@ -9,6 +9,7 @@ RUN sudo apt install -y \
 
 RUN pip3 install \
   flask \
-  h5py \
   pillow \
+  numpy \
+  h5py \
   && echo "...pip3 deps successfully installed..."

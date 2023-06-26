@@ -4,15 +4,9 @@ const url = require('url');
 const path = require('path');
 const np = require('numjs');
 
+httpProxy = require('http-proxy');
+
 // const PNG = require('pngjs').PNG;
-
-// const h5 = require('h5wasm');
-// import * as h5 from 'h5wasm';
-// const { FS } = await h5wasm.ready;
-// const h5 = require('./node_modules/h5wasm/dist/esm/hdf5_hl.js');
-// import * as h5 from './node_modules/h5wasm/dist/esm/hdf5_hl';
-
-const { buffer } = require('node:stream/consumers');
 
 const send404 = function(resp) {
 
@@ -61,7 +55,7 @@ const PlateDataset = function(id, count, width, height) {
     console.log('_id:', _id)
     const _filepath = `${_id}.h5`;
     let _fp;
-    const _abc = '0123456789ABCEHKMOPTY'
+    const _abc = '0123456789ABCEHKMOPTY';
     const _imgChannelNo = 4; //3;
 
     this.create = () => {
@@ -122,9 +116,9 @@ const getDataset = function(id) {
 }();
 
 function readStreamToBuffer(stream) {
-    
+
     return new Promise((resolve, reject) => {
-        
+
         const chunks = [];
         stream.on('data', chunk => chunks.push(chunk));
         stream.on('end', () => resolve(Buffer.concat(chunks)));
@@ -157,6 +151,16 @@ const server = http.createServer(function(req, resp) {
             resp.write('Image has been saved')
             resp.end();
         })
+    }
+    else if('/save-image-to-h5' == req_url.pathname) {
+
+        proxy.web(req, resp, {
+            target: {
+                protocol: 'http',
+                host: 'textima-storage',
+                port: 8000,
+            },
+        });
     }
     else if('/save-imagedata-to-h5' == req_url.pathname) {
 
@@ -215,7 +219,7 @@ const server = http.createServer(function(req, resp) {
         )
         .on('parsed', function() {
 
-            
+
         })
 
         // test response
