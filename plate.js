@@ -187,6 +187,11 @@ const parseUrl = function(url) {
     var [search, anchor] = search ? search.split('#') : [];
     // let paramRex = /(\/([^/]+))/gi;
     let params = {};
+    params.__proto__ = {
+        build: function() {
+            return Object.entries(this).map(kv => kv.join('=')).join('&')
+        },
+    };
     if(search) {
 
         search.split('&').forEach((elem) => {
@@ -215,26 +220,25 @@ setTimeout(() => {
         let img_data = ctx.getImageData(0, 0, fullCanvas.width, fullCanvas.height);
         console.log('img_data:', img_data);
         const location = parseUrl();
-        fetch(`/save-imagedata-to-h5?ds=${location.params["ds"] || ""}&number=${text}&symbols=${symbols.join('')}`, {
+        const dsId = location.params['ds'] || '';
+        fetch(`/save-imagedata-to-h5?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
             method: 'POST',
             body: img_data.data,
-            // dataType: 'image/png',
         })
-        .then((resp) => {
+        .then(resp => resp.json())
+        .then(resp => {
 
             console.log('resp:', resp);
 
             const loc = parseUrl(window.location.toString());
-            if('finished' == resp) {
+            if(resp.next < 0) {
                 alert('Finished!');
             }
             else {
-                loc.params['idx'] = parseInt(resp);
-                window.location.search = `?${loc.params.entries().map(([key, value]) => `${key}=${value}`).join('&')}`
+                loc.params['idx'] = resp.next;
+                loc.params['ds'] = resp.ds;
+                window.location.search = '?' + loc.params.build();
             }
-
-            // location.pathname = location.pathname;
-            // alert('Succeeded!')
         })
     });
 }, 100);

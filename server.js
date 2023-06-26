@@ -2,6 +2,7 @@ const fs = require('fs');
 const http = require('http');
 const url = require('url');
 const path = require('path');
+const np = require('numjs');
 
 // const PNG = require('pngjs').PNG;
 
@@ -47,64 +48,8 @@ import('h5wasm')
     return h5.ready;
 })
 .then(ready => {
-    
-    let new_file = new h5.File("test.h5", "w");
 
-    new_file.create_group("entry");
-
-    new_file.get("entry").create_dataset("auto", [5, 4, 3, 2, 1]);
-    new_file.close(); return
-    // shape and dtype will match input if omitted
-    new_file.get("entry").create_dataset("auto", [3.1, 4.1, 0.0, -1.0], null, '<f');
-    new_file.get("entry/auto").shape
-
-    // [4]
-    new_file.get("entry/auto").dtype
-    // "<d"
-    new_file.get("entry/auto").value
-    // Float64Array(4) [3.1, 4.1, 0, -1]
-
-    // make float array instead of double (shape will still match input if it is set to null)
-    new_file.get("entry").create_dataset("data", [3.1, 4.1, 0.0, -1.0], null, '<f');
-    new_file.get("entry/data").shape
-    // [4]
-    new_file.get("entry/data").value
-    //Float32Array(4) [3.0999999046325684, 4.099999904632568, 0, -1]
-
-    // create a dataset with shape=[2,2]
-    // The dataset stored in the HDF5 file with the correct shape, 
-    // but no attempt is made to make a 2x2 array out of it in javascript
-    new_file.get("entry").create_dataset("square_data", [3.1, 4.1, 0.0, -1.0], [2,2], '<d');
-    new_file.get("entry/square_data").shape
-    // (2) [2, 2]
-    new_file.get("entry/square_data").value
-    //Float64Array(4) [3.1, 4.1, 0, -1]
-
-    // create an attribute (creates a VLEN string by default for a string)
-    new_file.get("entry").create_attribute("myattr", "a string");
-    Object.keys(new_file.get("entry").attrs)
-    // ["myattr"]
-    new_file.get("entry").attrs["myattr"]
-    // {value: "a string", shape: Array(0), dtype: "S"}
-
-    new_file.get("entry").create_attribute("fixed", ["hello", "you"], null, "S5")
-    new_file.get("entry").attrs["fixed"]
-    /*
-    {
-        "value": [
-            "hello",
-            "you"
-        ],
-        "shape": [
-            2
-        ],
-        "dtype": "S5"
-    }
-    */
-
-    // close the file - reading and writing will no longer work.
-    // calls H5Fclose on the file_id.
-    new_file.close()
+    console.info('h5.ready');
 })
 
 const PlateDataset = function(id, count, width, height) {
@@ -113,6 +58,7 @@ const PlateDataset = function(id, count, width, height) {
     let _generatedNo = 0;
     const _currentTime = (new Date()).toLocaleString().replace(', ', '_').replace(/[:.]/g, '-');
     const _id = id || _currentTime;
+    console.log('_id:', _id)
     const _filepath = `${_id}.h5`;
     let _fp;
     const _abc = '0123456789ABCEHKMOPTY'
@@ -121,19 +67,33 @@ const PlateDataset = function(id, count, width, height) {
     this.create = () => {
 
         _fp = new h5.File(_filepath, 'w');
-        dsX = _fp.create_dataset('X', [_count, _imgChannelNo, height, width], null, '<B');
-        dsY = _fp.create_dataset('Y', [_count, _abc.length, height, width], null, '<B');
+        _fp.create_dataset('X', new Uint8Array(_count * _imgChannelNo * height * width), [_count, _imgChannelNo, height, width], '<B');
+        _fp.create_dataset('Y', new Uint8Array(_count * _abc.length * height * width), [_count, _abc.length, height, width], '<B');
+        console.log(_filepath, 'has been opened');
     };
+
+    this.close = () => _fp.close();
 
     this.X = () => _fp['X'];
     this.Y = () => _fp['Y'];
     this.assign = (x, y) => {
 
-        this.Y[_generatedNo] = 0;
+        if(!_fp) {
 
-        this.X[_generatedNo] = x;
-        this.Y[_generatedNo] = y;
-        return ++_generatedNo;
+            this.create();
+        }
+
+        _fp.get('X')[_generatedNo] = x;
+        _fp.get('Y')[_generatedNo] = y;
+
+        if(++_generatedNo === _count) {
+
+            _fp.close();
+            _fp = null;
+            return -1;
+        }
+
+        return _generatedNo;
     };
 
     this.inputChannelNo = () => _imgChannelNo;
@@ -150,12 +110,13 @@ const getDataset = function(id) {
     const datasetList = {};
     return () => {
 
-        if(!datasetList.hasOwnProperty(id)) {
+        if(!id || !datasetList.hasOwnProperty(id)) {
 
             const ds = new PlateDataset(id, 10, 256, 128);
-            ds.create();
+            id = ds.id();
             datasetList[id] = ds;
         }
+        console.log(`getDataset(${id})`)
         return datasetList[id];
     };
 }();
@@ -214,11 +175,14 @@ const server = http.createServer(function(req, resp) {
             // console.log('buf:', buf);
             let imgData = new Uint8Array(buf);
 
-            console.log('imgData:', imgData);
+            // console.log('imgData:', imgData);
 
             let ds = getDataset(dsId);
             let inputDataLength = ds.inputChannelNo() * ds.height() * ds.width();
-            let nextIdx = ds.assign(
+            console.log('input data length:', inputDataLength);
+            // let inputImgData = np.array(imgData.slice(0, inputDataLength)).reshape([])
+
+            const nextIdx = ds.assign(
                 imgData.slice(0, inputDataLength),
                 imgData.slice(inputDataLength),
             );
@@ -229,23 +193,11 @@ const server = http.createServer(function(req, resp) {
                 'Content-Type': ['text/plain', 'charset=utf-8']
             });
 
-            resp.write(ds.finished() ? 'finish' : nextIdx);
+            resp.write(JSON.stringify({ds: ds.id(), next: nextIdx}));
             resp.end();
+
+            return;
         })
-        
-        return;
-        fileStream.on('finish', () => {
-
-            console.debug('/save-image-to-h5 finished!')
-
-            resp.writeHead(200, {
-                'Content-Type': ['text/plain', 'charset=utf-8']
-            });
-
-            resp.write('Image data has been saved to h5')
-            resp.end();
-        });
-
     }
     else if('/convert-png-to-h5' == req_url.pathname) {
 

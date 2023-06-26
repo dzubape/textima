@@ -11,3 +11,12 @@ insert_final_newline = true
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.Dockerfile]
+indent_size = 2
+
+[docker-compose.yml]
+indent_size = 2
+
+[*.py]
+indent_size = 2
