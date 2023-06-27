@@ -4,9 +4,11 @@ const url = require('url');
 const path = require('path');
 const np = require('numjs');
 
-httpProxy = require('http-proxy');
+const proxy = require('http-proxy').createProxyServer();
 
-// const PNG = require('pngjs').PNG;
+const webServerPort = 8080;
+const storageServerPort = 5000;
+const storageServerHostname = 'textima-storage';
 
 const send404 = function(resp) {
 
@@ -126,11 +128,35 @@ function readStreamToBuffer(stream) {
     });
 }
 
-const server = http.createServer(function(req, resp) {
+http.createServer(function(req, resp) {
 
     var req_url = url.parse(req.url, true);
+    console.debug('req_url:', req_url)
 
-    if('/save-image' == req_url.pathname) {
+    if(req_url.path.startsWith('/h5/')) {
+        console.debug('req: /h5/*');
+
+        req.url = req.url.replace('/h5', '')
+
+        proxy.web(req, resp, {
+            target: {
+                protocol: 'http',
+                host: storageServerHostname,
+                port: storageServerPort,
+            },
+        });
+    }
+    else if('/ping' === req_url.path) {
+        console.debug('req: /ping');
+
+        resp.writeHead(200, {
+            'Content-Type': ['text/plain', 'charset=utf-8']
+        });
+
+        resp.write('pong\n')
+        resp.end();
+    }
+    else if('/save-image' == req_url.pathname) {
 
         const plateNumber = req_url.query.number;
         const symbols = req_url.query.symbols;
@@ -152,17 +178,7 @@ const server = http.createServer(function(req, resp) {
             resp.end();
         })
     }
-    else if('/save-image-to-h5' == req_url.pathname) {
-
-        proxy.web(req, resp, {
-            target: {
-                protocol: 'http',
-                host: 'textima-storage',
-                port: 8000,
-            },
-        });
-    }
-    else if('/save-imagedata-to-h5' == req_url.pathname) {
+    else if('/h5/save-imagedata' == req_url.pathname) {
 
         const plateNumber = req_url.query.number;
         const symbols = req_url.query.symbols;
@@ -260,8 +276,7 @@ const server = http.createServer(function(req, resp) {
         });
     }
 
-});
-
-let serverPort = 8080;
-console.log(`Server is started on: http://localhost:${serverPort}`);
-server.listen(serverPort);
+})
+.listen(webServerPort, () => {
+    console.log(`Server is started on: http://localhost:${webServerPort}`);
+})

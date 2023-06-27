@@ -182,7 +182,7 @@ const parseUrl = function(url) {
 
     if(!arguments.length)
         url = location.toString();
-    
+
     var [path, search] = url.split('?');
     var [search, anchor] = search ? search.split('#') : [];
     // let paramRex = /(\/([^/]+))/gi;
@@ -204,7 +204,7 @@ const parseUrl = function(url) {
 };
 
 // Send image as pixel data
-if(true)
+if(false)
 setTimeout(() => {
 
     html2image.toCanvas(tabletWrapper.parentNode)
@@ -243,7 +243,51 @@ setTimeout(() => {
     });
 }, 100);
 
-if(0)
+// Send image as PNG
+if(true)
+setTimeout(() => {
+
+    html2image.toCanvas(tabletWrapper.parentNode)
+    .then((fullCanvas) => {
+
+        document.body.appendChild(fullCanvas);
+        fullCanvas.style.display = 'block';
+        fullCanvas.style.border = 'solid 1px red';
+
+        const png_data = fullCanvas.toDataURL('image/png');
+        console.log(png_data);
+        const png_blob = dataURLtoBlob(png_data);
+        const dsId = location.params['ds'] || '';
+        fetch(`/h5/save-image?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
+            method: 'POST',
+            body: png_blob,
+            dataType: 'image/png',
+        })
+        .then(resp => resp.json())
+        .then(resp => {
+
+            console.log('req. succeed with resp:', resp);
+
+            const loc = parseUrl(window.location.toString());
+            if('filled' === resp.status) {
+                alert('Finished!');
+                fetch('/h5/close')
+            }
+            else if('filling' === resp.status) {
+                loc.params['next'] = resp.filling;
+                loc.params['ds'] = resp.ds;
+                window.location.search = '?' + loc.params.build();
+            }
+        })
+        .catch(resp => resp.json())
+        .then(resp => {
+
+            console.error('error while request:', resp)
+        })
+    });
+}, 100);
+
+if(false)
 //############### />
 setTimeout(() => {
 

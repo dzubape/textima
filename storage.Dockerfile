@@ -2,10 +2,10 @@ FROM python:3.10-bullseye
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN sudo apt update
+RUN apt update
 
-RUN sudo apt install -y \
-  python-pip3
+RUN apt install -y \
+  python3-pip
 
 RUN pip3 install \
   flask \
@@ -13,3 +13,5 @@ RUN pip3 install \
   numpy \
   h5py \
   && echo "...pip3 deps successfully installed..."
+
+CMD ["flask", "--app", "storage.py", "--debug", "run", "--host", "0.0.0.0"]

@@ -162,6 +162,10 @@ class PlateDataset(Dataset):
     )
     return
 
+@app.route('/ping', methods=['GET'])
+def ping():
+  return respOk('pong')
+
 
 @app.route('/image', methods=['POST'])
 def image_add():
@@ -205,7 +209,7 @@ def close_ds():
   ds_id = request.args.get('ds')
   ds = Dataset.getStorage(ds_id)
   if ds is None:
-    respError('No dataset with id <ds> is open')
+    return respError(f'Dataset having id={ds_id} is not open')
 
   ds.close()
   return respOk()

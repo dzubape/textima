@@ -1,6 +1,6 @@
 FROM node
 
-RUN npm i
+# RUN npm i
 
 CMD ["npm", "run", "back-dev"]
 

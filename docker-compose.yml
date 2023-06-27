@@ -2,23 +2,27 @@ version: '3.7'
 
 services:
   web:
+    container_name: textima-web
     build:
       dockerfile: ./web.Dockerfile
       context: ./
     image: dzubape/textima/web
+    volumes:
+      - ./:/app
+    working_dir: /app
     ports:
-      - 13380:8000
+      - 13380:8080
     restart: always
-    container_name: textima-web
 
   storage:
-    build:
-      dockerfile: ./storage.Dockerfile
-      context: ./storager
-    image: dzubape/textima/storage
     container_name: textima-storage
+    build:
+      dockerfile: ../storage.Dockerfile
+      context: ./storage
+    image: dzubape/textima/storage
     volumes:
       - ./storage:/app
+    working_dir: /app
     ports:
-      - 13381:80
+      - 13381:5000
     restart: always
