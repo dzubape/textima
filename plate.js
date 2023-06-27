@@ -258,7 +258,7 @@ setTimeout(() => {
         console.log(png_data);
         const png_blob = dataURLtoBlob(png_data);
         const dsId = location.params['ds'] || '';
-        fetch(`/h5/save-image?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
+        fetch(`/h5/image?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
             method: 'POST',
             body: png_blob,
             dataType: 'image/png',
@@ -269,7 +269,7 @@ setTimeout(() => {
             console.log('req. succeed with resp:', resp);
 
             const loc = parseUrl(window.location.toString());
-            if('filled' === resp.status) {
+            if(resp.filled) {
                 alert('Finished!');
                 fetch('/h5/close')
             }

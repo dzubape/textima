@@ -80,6 +80,7 @@ class Dataset:
     _s.__layer_no = layer_no
     _s.__storage_filepath = Path() / f'{id}.h5'
     _s.__sample_no = sample_no
+    _s.__pos = None
     Dataset.storage_list[_s.__id] = _s
     return
 
@@ -92,23 +93,29 @@ class Dataset:
 
 
   def open(_s):
+    max_text_len = 9
     if _s.__storage_filepath.exists():
       _s.__fp = h5py.File(_s.__storage_filepath, 'w')
     else:
       _s.__fp = h5py.File(_s.__storage_filepath, 'w')
+      _s.__fp.create_dataset('label', (_s.__sample_no, max_text_len), dtype=np.uint8)
       _s.__fp.create_dataset('X', (_s.__sample_no, _s.__color_no, _s.__input_width, _s.__input_height), dtype=np.uint8)
       _s.__fp.create_dataset('Y', (_s.__sample_no, _s.__layer_no, _s.__input_width, _s.__input_height), dtype=np.uint8)
       _s.__fp.attrs['written_no'] = 0
-    _s.__written_no = _s.__fp.attrs['written_no']
+    _s.__pos = _s.__fp.attrs['written_no']
     return
 
 
   def close(_s):
-    _s.__fp.attrs['written_no'] = _s.__written_no
+    _s.__fp.attrs['written_no'] = _s.__pos
     Dataset.storage_list[_s.__id]
 
 
-  def append(_s, filepath=None, data=None):
+  def append(_s,
+    label: str,
+    filepath: str=None,
+    data: np.ndarray | Image.Image=None,
+  ):
     assert not(filepath and data), 'append using <filepath> or bitmap <data>'
 
     if not (filepath is None):
@@ -118,15 +125,19 @@ class Dataset:
       np_img = data
 
     np_in = np_img[:_s.__in_height].transpose(2, 0, 1)
-    _s.__fp['X'] = np_in
+    _s.__fp['X'][_s.__pos] = np_in
 
     np_out = np_img[_s.__in_height:]
     np_out = np_out[:, :, :1]
     np_out = np_out.reshape(_s.__layer_no, _s.__in_height, _s.__in_width)
     np_out = np_out.transpose(2, 0, 1)
-    _s.__fp['Y'] = np_out
-    _s.__written_no += 1
-    return _s.__written_no
+    _s.__fp['Y'][_s.__pos] = np_out
+
+    _s.__fp['label'][_s.__pos] = np.frombuffer(label.encode('ascii'))
+
+    _s.__pos += 1
+
+    return _s.__pos
 
 
   def isOpen(_s):
@@ -134,18 +145,28 @@ class Dataset:
 
 
   def __getitem__(_s, key):
-    if _s.isOpen():
-      _s.open()
-
+    assert _s.isOpen(), 'need open storage explicitly'
+    # if not _s.isOpen():
+    #   _s.open()
     return _s.__fp[key]
 
 
-  def isFilled(_s):
-    return _s.__written_no == _s.__sample_no
+  def __len__(_s):
+    return _s.__sample_no
+
+
+  def seek(_s, idx):
+    assert idx < _s.__sample_no
+    _s.__pos = idx + 1
+    return
 
 
   def filling(_s):
-    return _s.__written_no
+    return _s.__pos
+
+
+  def isFilled(_s):
+    return _s.__pos == _s.__sample_no
 
 
 class PlateDataset(Dataset):
@@ -162,6 +183,35 @@ class PlateDataset(Dataset):
     )
     return
 
+
+  def append(_s,
+    label: str,
+    filepath: str=None,
+    data: np.ndarray | Image.Image=None,
+  ):
+    assert not(filepath and data), 'append using <filepath> or bitmap <data>'
+
+    if not (filepath is None):
+      img = Image.open(filepath)
+      np_img = np.asarray(img)[:, :, :_s.__color_no]
+    else:
+      np_img = data
+
+    np_in = np_img[:_s.__in_height].transpose(2, 0, 1)
+    _s.__fp['X'][_s.__pos] = np_in
+
+    np_out = np_img[_s.__in_height:]
+    np_out = np_out[:, :, :1]
+    np_out = np_out.reshape(_s.__layer_no, _s.__in_height, _s.__in_width)
+    np_out = np_out.transpose(2, 0, 1)
+    _s.__fp['Y'][_s.__pos] = np_out
+
+    _s.__fp['label'][_s.__pos] = np.frombuffer(label.encode('ascii'))
+
+    _s.__pos += 1
+
+    return _s.__pos
+
 @app.route('/ping', methods=['GET'])
 def ping():
   return respOk('pong')
@@ -169,24 +219,45 @@ def ping():
 
 @app.route('/image', methods=['POST'])
 def image_add():
-  params = dict(ds=None, sample_no=10) | request.args.to_dict()
-  ds = PlateDataset.getStorage(
-    id=params['ds'],
-    sample_no=int(params['sample_no']),
-  )
+  param = lambda k, dv, type: request.args.get(k, dv, type=type)
+
+  ds_id = param('ds', None, str),
+  sample_no = param('sample_no', 10, int),
+  next_idx = param('next', None, int),
+
+  if ds_id is not None:
+    ds = PlateDataset.getStorage(ds_id)
+
+  if ds_id is None or ds is None:
+    ds = PlateDataset(sample_no)
+
+  ds.open()
+  if next_idx is not None:
+    ds.seek(next_idx)
 
   if ds.isFilled():
-    return respError('filled')
+    return respError(
+      f'Storage <{ds_id}> is already overfilled',
+      error='overfilled',
+      filled=True,
+      filling=len(ds),
+    )
 
   if len(request.files) == 0:
-    return respError('no_images_attached')
+    return respError(
+      'No images in request',
+      error='no_images',
+    )
 
   for file_id in request.files:
     uploaded_file = request.files[file_id]
 
     if not allowed_file(uploaded_file.filename, ['jpg', 'png']):
       log.debug(f'not allowed file <{uploaded_file.filename}>')
-      return respError(f'not allowed file <{uploaded_file.filename}>')
+      return respError(
+        f'Not allowed file extension {uploaded_file.filename}',
+        error='not_allowed_file',
+      )
 
     with TemporaryDirectory() as tmp_dir:
       tmp_filepath = os.path.join(tmp_dir, file_id)
@@ -194,11 +265,15 @@ def image_add():
       ds.append(filepath=tmp_filepath)
 
     filling = ds.filling()
+    filled = ds.isFilled()
 
-    if ds.isFilled():
+    if filled:
       ds.close()
 
-  return respOk(filling=filling)
+  return respOk(
+    filled=filled,
+    filling=filling,
+  )
 
 
 @app.route('/close', methods=['POST'])
