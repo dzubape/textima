@@ -72,16 +72,16 @@ class Dataset:
     layer_no: int, # class layers
     sample_no: int=1000,
   ):
-    _s.__fp = None
-    _s.__id = id
-    _s.__in_width = in_width
-    _s.__in_height = in_height
-    _s.__color_no = color_no
-    _s.__layer_no = layer_no
-    _s.__storage_filepath = Path() / f'{id}.h5'
-    _s.__sample_no = sample_no
-    _s.__pos = None
-    Dataset.storage_list[_s.__id] = _s
+    _s._fp = None
+    _s._id = id
+    _s._in_width = in_width
+    _s._in_height = in_height
+    _s._color_no = color_no
+    _s._layer_no = layer_no
+    _s._storage_filepath = Path() / f'{id}.h5'
+    _s._sample_no = sample_no
+    _s._pos = 0
+    Dataset.storage_list[_s._id] = _s
     return
 
 
@@ -92,23 +92,27 @@ class Dataset:
     return Dataset.storage_list.get(id, None)
 
 
+  def id(_s):
+    return _s._id
+
+
   def open(_s):
     max_text_len = 9
-    if _s.__storage_filepath.exists():
-      _s.__fp = h5py.File(_s.__storage_filepath, 'w')
+    if _s._storage_filepath.exists():
+      _s._fp = h5py.File(_s._storage_filepath, 'r+')
     else:
-      _s.__fp = h5py.File(_s.__storage_filepath, 'w')
-      _s.__fp.create_dataset('label', (_s.__sample_no, max_text_len), dtype=np.uint8)
-      _s.__fp.create_dataset('X', (_s.__sample_no, _s.__color_no, _s.__input_width, _s.__input_height), dtype=np.uint8)
-      _s.__fp.create_dataset('Y', (_s.__sample_no, _s.__layer_no, _s.__input_width, _s.__input_height), dtype=np.uint8)
-      _s.__fp.attrs['written_no'] = 0
-    _s.__pos = _s.__fp.attrs['written_no']
+      _s._fp = h5py.File(_s._storage_filepath, 'w')
+      _s._fp.create_dataset('label', (_s._sample_no, max_text_len), dtype=np.uint8)
+      _s._fp.create_dataset('X', (_s._sample_no, _s._color_no, _s._in_height, _s._in_width), dtype=np.uint8)
+      _s._fp.create_dataset('Y', (_s._sample_no, _s._layer_no, _s._in_height, _s._in_width), dtype=np.uint8)
+      _s._fp.attrs['written_no'] = 0
+    _s._pos = _s._fp.attrs['written_no']
     return
 
 
   def close(_s):
-    _s.__fp.attrs['written_no'] = _s.__pos
-    Dataset.storage_list[_s.__id]
+    _s._fp.attrs['written_no'] = _s._pos
+    _s._fp.close()
 
 
   def append(_s,
@@ -120,59 +124,59 @@ class Dataset:
 
     if not (filepath is None):
       img = Image.open(filepath)
-      np_img = np.asarray(img)[:, :, :_s.__color_no]
+      np_img = np.asarray(img)[:, :, :_s._color_no]
     else:
       np_img = data
 
-    np_in = np_img[:_s.__in_height].transpose(2, 0, 1)
-    _s.__fp['X'][_s.__pos] = np_in
+    np_in = np_img[:_s._in_height].transpose(2, 0, 1)
+    _s._fp['X'][_s._pos] = np_in
 
-    np_out = np_img[_s.__in_height:]
+    np_out = np_img[_s._in_height:]
     np_out = np_out[:, :, :1]
-    np_out = np_out.reshape(_s.__layer_no, _s.__in_height, _s.__in_width)
+    np_out = np_out.reshape(_s._layer_no, _s._in_height, _s._in_width)
     np_out = np_out.transpose(2, 0, 1)
-    _s.__fp['Y'][_s.__pos] = np_out
+    _s._fp['Y'][_s._pos] = np_out
 
-    _s.__fp['label'][_s.__pos] = np.frombuffer(label.encode('ascii'))
+    _s._fp['label'][_s._pos] = np.frombuffer(label.encode('ascii'))
 
-    _s.__pos += 1
+    _s._pos += 1
 
-    return _s.__pos
+    return _s._pos
 
 
   def isOpen(_s):
-    return _s.__fp is not None
+    return _s._fp is not None
 
 
   def __getitem__(_s, key):
     assert _s.isOpen(), 'need open storage explicitly'
     # if not _s.isOpen():
     #   _s.open()
-    return _s.__fp[key]
+    return _s._fp[key]
 
 
   def __len__(_s):
-    return _s.__sample_no
+    return _s._sample_no
 
 
   def seek(_s, idx):
-    assert idx < _s.__sample_no
-    _s.__pos = idx + 1
+    assert idx < _s._sample_no
+    _s._pos = idx + 1
     return
 
 
   def filling(_s):
-    return _s.__pos
+    return _s._pos
 
 
   def isFilled(_s):
-    return _s.__pos == _s.__sample_no
+    return _s._pos == _s._sample_no
 
 
 class PlateDataset(Dataset):
   abc = '0123456789ABCEHKMOPTY'
 
-  def __init__(_s, sample_no=10):
+  def __init__(_s, id=None, sample_no=10):
     super().__init__(
       id or f'plates-{sample_no}pcs',
       in_width=316,
@@ -186,31 +190,42 @@ class PlateDataset(Dataset):
 
   def append(_s,
     label: str,
+    # symbols: str,
     filepath: str=None,
     data: np.ndarray | Image.Image=None,
   ):
     assert not(filepath and data), 'append using <filepath> or bitmap <data>'
 
-    if not (filepath is None):
+    label = label.upper()
+    symbols = set(c for c in label)
+
+    if filepath is not None:
       img = Image.open(filepath)
-      np_img = np.asarray(img)[:, :, :_s.__color_no]
+      print(f'img.size: {img.size}')
+      np_img = np.asarray(img)[:, :, :_s._color_no]
     else:
       np_img = data
 
-    np_in = np_img[:_s.__in_height].transpose(2, 0, 1)
-    _s.__fp['X'][_s.__pos] = np_in
+    np_in = np_img[:_s._in_height].transpose(2, 0, 1)
+    _s._fp['X'][_s._pos] = np_in
 
-    np_out = np_img[_s.__in_height:]
-    np_out = np_out[:, :, :1]
-    np_out = np_out.reshape(_s.__layer_no, _s.__in_height, _s.__in_width)
-    np_out = np_out.transpose(2, 0, 1)
-    _s.__fp['Y'][_s.__pos] = np_out
+    np_out = np_img[_s._in_height:] # crop
+    np_out = np_out[:, :, :1] # single channel
+    np_out = np_out.reshape(len(symbols), _s._in_height, _s._in_width) # slicing to separate symbol maps
+    # np_out = np_out.transpose(0, 3, 1, 2) # replacing channel from the last pos to the first
 
-    _s.__fp['label'][_s.__pos] = np.frombuffer(label.encode('ascii'))
+    np_out_sparse = np.zeros((_s._layer_no, _s._in_height, _s._in_width), dtype=np.uint8)
+    for i, c in enumerate(symbols):
+      j = PlateDataset.abc.find(c)
+      np_out_sparse[j] = 255 - np_out[i]
 
-    _s.__pos += 1
+    _s._fp['Y'][_s._pos] = np_out_sparse
 
-    return _s.__pos
+    _s._fp['label'][_s._pos] = np.frombuffer(label.encode('ascii'))
+
+    _s._pos += 1
+
+    return _s._pos
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -219,27 +234,37 @@ def ping():
 
 @app.route('/image', methods=['POST'])
 def image_add():
-  param = lambda k, dv, type: request.args.get(k, dv, type=type)
+  param = lambda k, dv=None, type=str: request.args.get(k, dv, type=type)
 
-  ds_id = param('ds', None, str),
-  sample_no = param('sample_no', 10, int),
-  next_idx = param('next', None, int),
+  ds_id = param('ds', None, str)
+  sample_no = param('sample_no', 10, int)
+  next_idx = param('next', None, int)
+  label = param('label', None, str)
+
+  log.debug(f'ds_id: {ds_id}')
+  log.debug(f'sample_no: {sample_no}')
+  log.debug(f'next_idx: {next_idx}')
+  log.debug(f'label: {label}')
 
   if ds_id is not None:
     ds = PlateDataset.getStorage(ds_id)
 
   if ds_id is None or ds is None:
-    ds = PlateDataset(sample_no)
+    ds = PlateDataset(sample_no=sample_no)
 
-  ds.open()
+  if not ds.isOpen():
+    ds.open()
+
   if next_idx is not None:
     ds.seek(next_idx)
+
+  ds_id = ds.id()
 
   if ds.isFilled():
     return respError(
       f'Storage <{ds_id}> is already overfilled',
       error='overfilled',
-      filled=True,
+      filled=1,
       filling=len(ds),
     )
 
@@ -250,6 +275,8 @@ def image_add():
     )
 
   for file_id in request.files:
+    log.debug(f'file_id: {file_id}')
+
     uploaded_file = request.files[file_id]
 
     if not allowed_file(uploaded_file.filename, ['jpg', 'png']):
@@ -262,7 +289,10 @@ def image_add():
     with TemporaryDirectory() as tmp_dir:
       tmp_filepath = os.path.join(tmp_dir, file_id)
       uploaded_file.save(tmp_filepath)
-      ds.append(filepath=tmp_filepath)
+      ds.append(
+        label,
+        filepath=tmp_filepath,
+      )
 
     filling = ds.filling()
     filled = ds.isFilled()
@@ -271,8 +301,9 @@ def image_add():
       ds.close()
 
   return respOk(
-    filled=filled,
-    filling=filling,
+    ds=ds_id,
+    filled=1 if filled else 0,
+    filling=int(filling),
   )
 
 

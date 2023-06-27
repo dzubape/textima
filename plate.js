@@ -110,7 +110,7 @@ let tabletWrapper = document.getElementById('tablet-wrapper');
 // tablet.style.transform = 'rotateY(5deg)';
 // tablet.style.background = `rgb(${ranCol()}, ${ranCol()}, ${ranCol()})`;
 let plateAngle = randomFromRange(-45, 45);
-console.log(plateAngle)
+console.debug(plateAngle)
 let tablet = tabletWrapper.getElementsByClassName('tablet')[0];
 tablet.style.transform = `perspective(500px) rotateY(${plateAngle}deg) rotateX(${randomFromRange(-15, 15)}deg) rotateZ(${randomFromRange(-15, 15)}deg)`;
 tablet.style.transformOrigin = plateAngle > 0 ? 'left' : 'right';
@@ -202,6 +202,7 @@ const parseUrl = function(url) {
     }
     return {path, params, anchor};
 };
+const location = parseUrl(window.location.toString());
 
 // Send image as pixel data
 if(false)
@@ -255,12 +256,14 @@ setTimeout(() => {
         fullCanvas.style.border = 'solid 1px red';
 
         const png_data = fullCanvas.toDataURL('image/png');
-        console.log(png_data);
         const png_blob = dataURLtoBlob(png_data);
+        const form_data = new FormData();
+        form_data.append('plate', png_blob, 'plate.png')
+
         const dsId = location.params['ds'] || '';
-        fetch(`/h5/image?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
+        fetch(`/h5/image?ds=${dsId}&label=${text}&symbols=${symbols.join('')}&sample_no=${location.params['sample_no'] || ''}`, {
             method: 'POST',
-            body: png_blob,
+            body: form_data,
             dataType: 'image/png',
         })
         .then(resp => resp.json())
@@ -268,22 +271,23 @@ setTimeout(() => {
 
             console.log('req. succeed with resp:', resp);
 
-            const loc = parseUrl(window.location.toString());
             if(resp.filled) {
                 alert('Finished!');
-                fetch('/h5/close')
+                fetch(`/h5/close?ds=${resp.ds}`, {
+                    method: 'POST',
+                })
+                .then(resp => {
+                    alert('Storage successfully closed')
+                })
             }
-            else if('filling' === resp.status) {
-                loc.params['next'] = resp.filling;
-                loc.params['ds'] = resp.ds;
-                window.location.search = '?' + loc.params.build();
+            else {
+                location.params['next'] = resp.filling;
+                location.params['ds'] = resp.ds;
+                // debugger
+                window.location.search = '?' + location.params.build();
             }
         })
-        .catch(resp => resp.json())
-        .then(resp => {
-
-            console.error('error while request:', resp)
-        })
+        .catch(resp => console.error(resp))
     });
 }, 100);
 
