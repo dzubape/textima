@@ -102,10 +102,12 @@ class Dataset:
       _s._fp = h5py.File(_s._storage_filepath, 'r+')
     else:
       _s._fp = h5py.File(_s._storage_filepath, 'w')
-      _s._fp.create_dataset('label', (_s._sample_no, max_text_len), dtype=np.uint8)
+      # _s._fp.create_dataset('label', (_s._sample_no, max_text_len), dtype=np.uint8)
       _s._fp.create_dataset('X', (_s._sample_no, _s._color_no, _s._in_height, _s._in_width), dtype=np.uint8)
       _s._fp.create_dataset('Y', (_s._sample_no, _s._layer_no, _s._in_height, _s._in_width), dtype=np.uint8)
       _s._fp.attrs['written_no'] = 0
+      if _s._init_ds:
+        _s._init_ds()
     _s._pos = _s._fp.attrs['written_no']
     return
 
@@ -175,6 +177,7 @@ class Dataset:
 
 class PlateDataset(Dataset):
   abc = '0123456789ABCEHKMOPTY'
+  label_max_len = 9
 
   def __init__(_s, id=None, sample_no=10):
     super().__init__(
@@ -186,6 +189,10 @@ class PlateDataset(Dataset):
       sample_no=sample_no,
     )
     return
+
+
+  def _init_ds(_s):
+    _s._fp.create_dataset('label', (_s._sample_no, PlateDataset.label_max_len), dtype=np.uint8)
 
 
   def append(_s,
@@ -221,11 +228,14 @@ class PlateDataset(Dataset):
 
     _s._fp['Y'][_s._pos] = np_out_sparse
 
-    _s._fp['label'][_s._pos] = np.frombuffer(label.encode('ascii'))
+    np_label = np.frombuffer(bytes(label, 'ascii'), dtype=np.uint8).copy()
+    np_label.resize(9)
+    _s._fp['label'][_s._pos] = np_label
 
     _s._pos += 1
 
     return _s._pos
+
 
 @app.route('/ping', methods=['GET'])
 def ping():
