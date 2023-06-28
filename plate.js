@@ -1,4 +1,5 @@
 import * as html2image from './node_modules/html-to-image/es/index';
+// import * as html2image from 'html-to-image';
 
 // import { toCanvas, toPng, toJpeg, toBlob, toPixelData, toSvg } from './node_modules/html-to-image/dist/html-to-image.js ';
 //import './node_modules/html-to-image/dist/html-to-image.js';
@@ -248,12 +249,18 @@ setTimeout(() => {
 if(true)
 setTimeout(() => {
 
+    // console.log('html:', tabletWrapper.parentNode)
+
     html2image.toCanvas(tabletWrapper.parentNode)
     .then((fullCanvas) => {
+
+        // console.log('canvas:', fullCanvas);
 
         document.body.appendChild(fullCanvas);
         fullCanvas.style.display = 'block';
         fullCanvas.style.border = 'solid 1px red';
+
+        // return;
 
         const png_data = fullCanvas.toDataURL('image/png');
         const png_blob = dataURLtoBlob(png_data);
@@ -272,13 +279,13 @@ setTimeout(() => {
             console.log('req. succeed with resp:', resp);
 
             if(resp.filled) {
-                alert('Finished!');
                 fetch(`/h5/close?ds=${resp.ds}`, {
                     method: 'POST',
                 })
                 .then(resp => {
                     alert('Storage successfully closed')
                 })
+                alert('Finished!');
             }
             else {
                 location.params['next'] = resp.filling;

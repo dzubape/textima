@@ -1,7 +1,11 @@
-FROM node
+FROM node as dev
 
-# RUN npm i
-
+WORKDIR /app/dev
 CMD ["npm", "run", "back-dev"]
 
-EXPOSE 8000
+
+FROM dev as prod
+
+WORKDIR /app/prod
+COPY . ./
+RUN npm i

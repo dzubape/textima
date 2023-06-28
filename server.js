@@ -131,7 +131,7 @@ function readStreamToBuffer(stream) {
 http.createServer(function(req, resp) {
 
     var req_url = url.parse(req.url, true);
-    console.debug('req_url:', req_url)
+    // console.debug('req_url:', req_url)
 
     if(req_url.path.startsWith('/h5/')) {
         console.debug('req: /h5/*');

@@ -78,7 +78,7 @@ class Dataset:
     _s._in_height = in_height
     _s._color_no = color_no
     _s._layer_no = layer_no
-    _s._storage_filepath = Path() / f'{id}.h5'
+    _s._storage_filepath = Path() / '..' / 'storage' / f'{id}.h5'
     _s._sample_no = sample_no
     _s._pos = 0
     Dataset.storage_list[_s._id] = _s
@@ -182,8 +182,8 @@ class PlateDataset(Dataset):
   def __init__(_s, id=None, sample_no=10):
     super().__init__(
       id or f'plates-{sample_no}pcs',
-      in_width=316,
-      in_height=158,
+      in_width=256,
+      in_height=128,
       color_no=3,
       layer_no=len(PlateDataset.abc),
       sample_no=sample_no,
@@ -197,14 +197,14 @@ class PlateDataset(Dataset):
 
   def append(_s,
     label: str,
-    # symbols: str,
+    symbols: str,
     filepath: str=None,
     data: np.ndarray | Image.Image=None,
   ):
     assert not(filepath and data), 'append using <filepath> or bitmap <data>'
 
     label = label.upper()
-    symbols = set(c for c in label)
+    # symbols = set(c for c in label)
 
     if filepath is not None:
       img = Image.open(filepath)
@@ -216,7 +216,10 @@ class PlateDataset(Dataset):
     np_in = np_img[:_s._in_height].transpose(2, 0, 1)
     _s._fp['X'][_s._pos] = np_in
 
+    log.debug('>>This is dev')
+
     np_out = np_img[_s._in_height:] # crop
+    log.debug(f'{np_out.shape = }')
     np_out = np_out[:, :, :1] # single channel
     np_out = np_out.reshape(len(symbols), _s._in_height, _s._in_width) # slicing to separate symbol maps
     # np_out = np_out.transpose(0, 3, 1, 2) # replacing channel from the last pos to the first
@@ -250,11 +253,13 @@ def image_add():
   sample_no = param('sample_no', 10, int)
   next_idx = param('next', None, int)
   label = param('label', None, str)
+  symbols = param('symbols', None, str)
 
-  log.debug(f'ds_id: {ds_id}')
-  log.debug(f'sample_no: {sample_no}')
-  log.debug(f'next_idx: {next_idx}')
-  log.debug(f'label: {label}')
+  log.debug(f'{ds_id = }')
+  log.debug(f'{sample_no = }')
+  log.debug(f'{next_idx = }')
+  log.debug(f'{label = }')
+  log.debug(f'{symbols = }')
 
   if ds_id is not None:
     ds = PlateDataset.getStorage(ds_id)
@@ -300,7 +305,8 @@ def image_add():
       tmp_filepath = os.path.join(tmp_dir, file_id)
       uploaded_file.save(tmp_filepath)
       ds.append(
-        label,
+        label=label,
+        symbols=symbols,
         filepath=tmp_filepath,
       )
 
@@ -327,5 +333,12 @@ def close_ds():
   if ds is None:
     return respError(f'Dataset having id={ds_id} is not open')
 
-  ds.close()
+  if ds.isOpen():
+    ds.close()
+  else:
+    return respError(
+      'Storage is already closed',
+      error='not_open',
+    )
+
   return respOk()

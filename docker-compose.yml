@@ -5,24 +5,25 @@ services:
     container_name: textima-web
     build:
       dockerfile: ./web.Dockerfile
+      target: ${TAG}
       context: ./
-    image: dzubape/textima/web
-    volumes:
-      - ./:/app
-    working_dir: /app
+    image: dzubape/textima/web:${TAG}
     ports:
-      - 13380:8080
+      - ${WEB_PORT}:8080
     restart: always
+
+    volumes:
+      - ./:/app/dev
 
   storage:
     container_name: textima-storage
     build:
       dockerfile: ../storage.Dockerfile
+      target: ${TAG}
       context: ./storage
-    image: dzubape/textima/storage
-    volumes:
-      - ./storage:/app
-    working_dir: /app
-    ports:
-      - 13381:5000
+    image: dzubape/textima/storage:${TAG}
     restart: always
+
+    volumes:
+      - ./storage:/app/dev
+      - ../textima-storage:/app/storage
