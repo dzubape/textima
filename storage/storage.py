@@ -96,6 +96,10 @@ class Dataset:
     return _s._id
 
 
+  def isOpen(_s):
+    return _s._fp is not None
+
+
   def open(_s):
     max_text_len = 9
     if _s._storage_filepath.exists():
@@ -115,6 +119,9 @@ class Dataset:
   def close(_s):
     _s._fp.attrs['written_no'] = _s._pos
     _s._fp.close()
+    _s._fp = None
+    log.debug(f'storage {_s._storage_filepath} has been closed')
+    return
 
 
   def append(_s,
@@ -146,10 +153,6 @@ class Dataset:
     return _s._pos
 
 
-  def isOpen(_s):
-    return _s._fp is not None
-
-
   def __getitem__(_s, key):
     assert _s.isOpen(), 'need open storage explicitly'
     # if not _s.isOpen():
@@ -176,7 +179,10 @@ class Dataset:
 
 
 class PlateDataset(Dataset):
-  abc = '0123456789ABCEHKMOPTY'
+  letters = 'ABCEHKMOPTXY'
+  digits = '0123456789'
+  abc = digits + letters
+
   label_max_len = 9
 
   def __init__(_s, id=None, sample_no=10):

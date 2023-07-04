@@ -82,7 +82,6 @@ let text = "Hello, babe! Какой чудесный день!";
 const getRandomPlateNumber = () => {
 
     const symbol = {
-        // letters: 'АВЕКМНОРСТУХ',
         letters: 'ABCEHKMOPTXY',
         digits: '0123456789',
     };
@@ -153,32 +152,6 @@ for(let i=0; i<symbols.length; ++i) {
     tabletWrapper.parentNode.appendChild(layer);
 }
 
-// Send image as PNG
-if(false)
-setTimeout(() => {
-
-    html2image.toCanvas(tablet.parentNode)
-    .then((fullCanvas) => {
-
-        document.body.appendChild(fullCanvas);
-        fullCanvas.style.display = 'block';
-        fullCanvas.style.border = 'solid 1px red';
-
-        let img_data = fullCanvas.toDataURL('image/png');
-        console.log(img_data);
-        let img_blob = dataURLtoBlob(img_data);
-        fetch(`/save-image?number=${text}&symbols=${symbols.join('')}`, {
-            method: 'POST',
-            body: img_blob,
-            dataType: 'image/png',
-        })
-        .then(() => {
-
-            location.pathname = location.pathname;
-        })
-    });
-}, 100);
-
 const parseUrl = function(url) {
 
     if(!arguments.length)
@@ -205,45 +178,6 @@ const parseUrl = function(url) {
 };
 const location = parseUrl(window.location.toString());
 
-// Send image as pixel data
-if(false)
-setTimeout(() => {
-
-    html2image.toCanvas(tabletWrapper.parentNode)
-    .then((fullCanvas) => {
-
-        document.body.appendChild(fullCanvas);
-        fullCanvas.style.display = 'block';
-        fullCanvas.style.border = 'solid 1px red';
-
-        let ctx = fullCanvas.getContext('2d');
-        // ctx.globalAlpha = 0;
-
-        let img_data = ctx.getImageData(0, 0, fullCanvas.width, fullCanvas.height);
-        console.log('img_data:', img_data);
-        const location = parseUrl();
-        const dsId = location.params['ds'] || '';
-        fetch(`/save-imagedata-to-h5?ds=${dsId}&number=${text}&symbols=${symbols.join('')}`, {
-            method: 'POST',
-            body: img_data.data,
-        })
-        .then(resp => resp.json())
-        .then(resp => {
-
-            console.log('resp:', resp);
-
-            const loc = parseUrl(window.location.toString());
-            if(resp.next < 0) {
-                alert('Finished!');
-            }
-            else {
-                loc.params['idx'] = resp.next;
-                loc.params['ds'] = resp.ds;
-                window.location.search = '?' + loc.params.build();
-            }
-        })
-    });
-}, 100);
 
 // Send image as PNG
 if(true)
@@ -298,56 +232,3 @@ setTimeout(() => {
     });
 }, 100);
 
-if(false)
-//############### />
-setTimeout(() => {
-
-let maskCanvas = document.createElement('canvas');
-
-html2image.toCanvas(document.getElementById('tablet'))
-.then((colorCanvas) => {
-
-    document.body.appendChild(colorCanvas);
-
-    maskCanvas.width = colorCanvas.width;
-    maskCanvas.height = colorCanvas.height * symbols.length;
-    document.body.appendChild(maskCanvas);
-
-    colorCanvas.style.border = 'solid 1px red';
-    colorCanvas.style.display = 'block';
-    maskCanvas.style.border = 'solid 1px red';
-    maskCanvas.style.display = 'block';
-
-    tablet.classList.add('show-only');
-    let i=0;
-    let interv = setInterval(() => {
-
-        if(i >= symbols.length) {
-
-            tablet.classList.remove('show-only');
-        }
-        else {
-
-            tablet.setAttribute('show-symbol', symbols[i]);
-            const j = i;
-
-            html2image.toCanvas(document.getElementById('tablet'))
-            .then((symbolMask) => {
-
-                document.body.appendChild(symbolMask);
-                symbolMask.style.display = 'block';
-                symbolMask.style.border = 'solid 1px red';
-
-                let maskImage = symbolMask.getContext('2d').getImageData(0, 0, symbolMask.width, symbolMask.height);
-                console.log(maskImage);
-                let y = j*symbolMask.height;
-                console.log(`y: ${y}`)
-                maskCanvas.getContext('2d').putImageData(maskImage, 0, y)
-            })
-
-            ++i;
-        }
-    }, 100)
-});
-
-}, 100); // setTimeout

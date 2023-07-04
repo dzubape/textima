@@ -6,9 +6,13 @@ const np = require('numjs');
 
 const proxy = require('http-proxy').createProxyServer();
 
-const webServerPort = 8080;
-const storageServerPort = 5000;
-const storageServerHostname = 'textima-storage';
+const webServerPort = process.env.WEB_SERVER_PORT; //8080;
+const storageServerPort = process.env.STORAGE_SERVER_PORT; //5000;
+const storageServerHostname = process.env.STORAGE_SERVER_HOSTNAME; //'textima-storage';
+
+console.debug('webServerPort:', webServerPort);
+console.debug('storageServerPort:', storageServerPort);
+console.debug('storageServerHostname:', storageServerHostname);
 
 const send404 = function(resp) {
 
@@ -131,10 +135,10 @@ function readStreamToBuffer(stream) {
 http.createServer(function(req, resp) {
 
     var req_url = url.parse(req.url, true);
-    // console.debug('req_url:', req_url)
+    // console.debug('req_url:', req_url.href)
 
     if(req_url.path.startsWith('/h5/')) {
-        console.debug('req: /h5/*');
+        console.debug('req: ' + req_url.path);
 
         req.url = req.url.replace('/h5', '')
 

@@ -1,29 +1,46 @@
 version: '3.7'
 
 services:
-  web:
-    container_name: textima-web
+  web_server:
+    container_name: textima-web-server
     build:
-      dockerfile: ./web.Dockerfile
-      target: ${TAG}
-      context: ./
-    image: dzubape/textima/web:${TAG}
+      dockerfile: ../web-server.Dockerfile
+      context: ./web-server
+    image: dzubape/textima-web-server
     ports:
-      - ${WEB_PORT}:8080
-    restart: always
-
+      - ${WEB_PORT}:${WEB_SERVER_PORT}
     volumes:
-      - ./:/app/dev
+      - ./web-server:/app/dev
+    working_dir: /app/${TAG}
+    env_file: .env
+    restart: always
+    profiles: ["backend"]
 
   storage:
     container_name: textima-storage
     build:
       dockerfile: ../storage.Dockerfile
-      target: ${TAG}
       context: ./storage
-    image: dzubape/textima/storage:${TAG}
-    restart: always
-
+      args:
+        STORAGE_SERVER_PORT: ${STORAGE_SERVER_PORT}
+    image: dzubape/textima/storage
     volumes:
       - ./storage:/app/dev
-      - ../textima-storage:/app/storage
+      - ./datasets:/app/storage
+    working_dir: /app/${TAG}
+    restart: always
+    profiles: ["backend"]
+
+  web_client:
+    container_name: web-client
+    build:
+      dockerfile: ../web-client.Dockerfile
+      context: ./web-client
+    image: dzubape/textima/web-client
+    env_file: .env
+    restart: no
+    depends_on:
+      - web_server
+      - storage
+    profiles: ["frontend"]
+

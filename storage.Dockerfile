@@ -14,14 +14,16 @@ RUN pip3 install \
   h5py \
   && echo "...pip3 deps successfully installed..."
 
-WORKDIR /app/dev
-CMD ["flask", "--app", "storage.py", "--debug", "run", "--host", "0.0.0.0"]
-
-
-FROM dev as prod
 
 WORKDIR /app/prod
-COPY . ./
+COPY . .
 
-CMD ["flask", "--app", "storage.py", "run", "--host", "0.0.0.0"]
+ARG STORAGE_SERVER_PORT
+ENV STORAGE_SERVER_PORT ${STORAGE_SERVER_PORT}
 
+RUN echo "STORAGE_SERVER_PORT: ${STORAGE_SERVER_PORT}"
+
+# CMD ["flask", "--app", "storage.py", "--debug", "run", "--host", "0.0.0.0", "--port", "${STORAGE_SERVER_PORT}"]
+# CMD echo "STORAGE_SERVER_PORT: ${STORAGE_SERVER_PORT}"
+
+CMD flask --app storage.py --debug run --host 0.0.0.0 --port ${STORAGE_SERVER_PORT}
