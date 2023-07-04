@@ -180,6 +180,7 @@ const location = parseUrl(window.location.toString());
 
 
 // Send image as PNG
+const LOAD_TIME=200; // ms
 if(true)
 setTimeout(() => {
 
@@ -230,5 +231,4 @@ setTimeout(() => {
         })
         .catch(resp => console.error(resp))
     });
-}, 100);
-
+}, LOAD_TIME);

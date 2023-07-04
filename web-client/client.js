@@ -1,10 +1,19 @@
 const puppeteer = require('puppeteer');
+const {ArgumentParser} = require('./argument-parser');
 
-const WEB_PORT=parseInt(process.env.WEB_PORT);
-const DS_LENGTH=parseInt(process.env.DS_LENGTH);
+console.debug('process.argv:', process.argv);
 
-const args = process.argv;
-console.log("args:", args);
+const parser = new ArgumentParser();
+parser.add_argument({name: 'hostname', type: 'string', default: 'localhost'})
+parser.add_argument({name: 'port', type: 'int', required: true})
+parser.add_argument({name: 'ds-length', type: 'int', default: 1024})
+
+const opts = parser.parse_args(process.argv.slice(2));
+
+console.debug('opts:', opts);
+
+const URL_AUTHORITY = `${opts['hostname']}:${opts['port']}`;
+const DS_LENGTH = opts['ds-length'] || parseInt(process.env.DS_LENGTH);
 
 puppeteer.launch({
   headless: 'new',
@@ -17,21 +26,20 @@ puppeteer.launch({
     browser.newPage()
     .then(page => {
 
-        page.waitForRequest(request => request.url().startsWith(`http://localhost:${WEB_PORT}/h5/close`), {timeout: 1000 * 60 * 60 * 8})
+        page.waitForRequest(request => request.url().startsWith(`http://${URL_AUTHORITY}/h5/close`), {timeout: 1000 * 60 * 60 * 8})
         .then(() => {
 
             setTimeout(() => {
 
                 browser.close();
-                console.debug('successfully closed')
+                console.debug('successfully generated and closed')
             }, 1000);
         })
 
-        page.goto(`http://localhost:${WEB_PORT}/plate.html?sample_no=16`)
+        page.goto(`http://${URL_AUTHORITY}/plate.html?sample_no=${DS_LENGTH}`)
         .then(() => {
 
             page.waitForNavigation()
-            // .then(() => browser.close())
         })
     })
 })
