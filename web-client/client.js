@@ -36,6 +36,7 @@ puppeteer.launch({
             }, 1000);
         })
 
+        page.on('console', msg => console.log('PAGE LOG:', msg.text()));
         page.goto(`http://${URL_AUTHORITY}/plate.html?sample_no=${DS_LENGTH}`)
         .then(() => {
 

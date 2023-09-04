@@ -180,7 +180,7 @@ const location = parseUrl(window.location.toString());
 
 
 // Send image as PNG
-const LOAD_TIME=200; // ms
+const LOAD_TIME=100; // ms
 if(true)
 setTimeout(() => {
 
@@ -195,7 +195,11 @@ setTimeout(() => {
         fullCanvas.style.display = 'block';
         fullCanvas.style.border = 'solid 1px red';
 
-        // return;
+        if(!location.params.length || 'test' in location.params) {
+
+            console.log('test request. stop')
+            return;
+        }
 
         const png_data = fullCanvas.toDataURL('image/png');
         const png_blob = dataURLtoBlob(png_data);

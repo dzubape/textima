@@ -2,7 +2,7 @@ const fs = require('fs');
 const http = require('http');
 const url = require('url');
 const path = require('path');
-const np = require('numjs');
+// const np = require('numjs');
 
 const proxy = require('http-proxy').createProxyServer();
 
@@ -251,6 +251,9 @@ http.createServer(function(req, resp) {
         resp.end();
     }
     else {
+
+        if(req_url.path.startsWith('/plate.html'))
+            console.log('next PAGE request:', req_url.path);
 
         var filePath = path.join(__dirname, req_url.pathname);
 

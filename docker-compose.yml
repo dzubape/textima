@@ -14,7 +14,7 @@ services:
     working_dir: /app/${TAG}
     env_file: .env
     restart: always
-    profiles: ["backend"]
+    # profiles: ["backend"]
 
   storage:
     container_name: textima-storage
@@ -24,23 +24,25 @@ services:
       args:
         STORAGE_SERVER_PORT: ${STORAGE_SERVER_PORT}
     image: dzubape/textima/storage
+    env_file: .env
     volumes:
       - ./storage:/app/dev
-      - ./datasets:/app/storage
+      # - ./datasets:/app/storage
+      - /home/petro/dev/sci-pyter/sandbox/xubean:/app/storage
     working_dir: /app/${TAG}
     restart: always
-    profiles: ["backend"]
+    # profiles: ["backend"]
 
-  web_client:
-    container_name: web-client
-    build:
-      dockerfile: ../web-client.Dockerfile
-      context: ./web-client
-    image: dzubape/textima/web-client
-    env_file: .env
-    restart: no
-    depends_on:
-      - web_server
-      - storage
-    profiles: ["frontend"]
+  # web_client:
+  #   container_name: web-client
+  #   build:
+  #     dockerfile: ../web-client.Dockerfile
+  #     context: ./web-client
+  #   image: dzubape/textima/web-client
+  #   env_file: .env
+  #   restart: "no"
+  #   depends_on:
+  #     - web_server
+  #     - storage
+  #   profiles: ["frontend"]
 
